@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+SC:wght@400;700&family=Zhi+Mang+Xing&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif SC", serif;
+  --font-calligraphy: "Zhi Mang Xing", cursive;
+
+  --color-paper: #FDFCF8;
+  --color-ink: #2C2C2C;
+  --color-cinnabar: #8B2B2B;
+  --color-cinnabar-light: #A63C3C;
+  --color-gold: #E6D5B8;
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+.chinese-text {
+  @apply font-serif;
+}
+
+.calligraphy {
+  @apply font-calligraphy;
+}
+
+/* Custom scrollbar for a more refined look */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-cinnabar/20 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-cinnabar/40;
+}

@@ -1,0 +1,8 @@
+name = "wenya-lexicon-ai"
+compatibility_date = "2024-04-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wenya_db"
+database_id = "YOUR_D1_DATABASE_ID" # 替换为你的 D1 数据库 ID

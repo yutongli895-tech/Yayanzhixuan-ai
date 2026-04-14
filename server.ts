@@ -1,0 +1,121 @@
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import path from "path";
+import { fileURLToPath } from "url";
+import { GoogleGenAI, Type } from "@google/genai";
+import dotenv from "dotenv";
+import { MOCK_DICTIONARY } from "./src/constants";
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function startServer() {
+  const app = express();
+  const PORT = 3000;
+
+  app.use(express.json());
+
+  // Gemini AI Setup
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  // API Routes
+  app.post("/api/analyze", async (req, res) => {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: "Text is required" });
+    }
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: `请对以下文言文进行深度解析：\n\n"${text}"`,
+        config: {
+          systemInstruction: `你是一位博学古今的文言文专家。
+你的任务是提供文言文的深度解析，包括现代汉语翻译、句法拆解（语法点）、重点词汇剖析以及必要的文化背景。
+请务必以 JSON 格式返回结果。`,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              translation: { type: Type.STRING },
+              syntax: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    point: { type: Type.STRING },
+                    explanation: { type: Type.STRING }
+                  },
+                  required: ["point", "explanation"]
+                }
+              },
+              keyWords: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    word: { type: Type.STRING },
+                    meaning: { type: Type.STRING },
+                    usage: { type: Type.STRING }
+                  },
+                  required: ["word", "meaning", "usage"]
+                }
+              },
+              culturalContext: { type: Type.STRING }
+            },
+            required: ["translation", "syntax", "keyWords"]
+          }
+        }
+      });
+
+      const result = JSON.parse(response.text || "{}");
+      res.json(result);
+    } catch (error) {
+      console.error("Gemini Error:", error);
+      res.status(500).json({ error: "Failed to analyze text" });
+    }
+  });
+
+  // D1 Mock/Proxy (For local dev, in CF this would be env.DB)
+  app.get("/api/dictionary/status", (req, res) => {
+    res.json({
+      database: "connected",
+      count: 160,
+      provider: "Cloudflare D1"
+    });
+  });
+
+  app.get("/api/dictionary/lookup", (req, res) => {
+    const { word } = req.query;
+    // 模拟本地 D1 查询逻辑
+    const entry = (MOCK_DICTIONARY as any)[word as string];
+    if (entry) {
+      res.json(entry);
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  });
+
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+startServer();
