@@ -5,4 +5,4 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "wenya_db"
-database_id = "a6777e7f-6a59-4019-94be-74b218365cc3" # 替换为你的 D1 数据库 ID
+database_id = "YOUR_D1_DATABASE_ID" # 替换为你的 D1 数据库 ID
