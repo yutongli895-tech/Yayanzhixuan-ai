@@ -1,7 +1,9 @@
-import React from 'react';
-import { Search, Loader2, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Loader2, Sparkles, MessageSquare, ArrowRightLeft, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { DictionaryEntry, AIAnalysisResult } from '../types';
+import { DictionaryEntry, AIAnalysisResult, ComparisonResult, DailyWord } from '../types';
+import { StrokeOrder } from './StrokeOrder';
+import { submitFeedback } from '../services/geminiService';
 
 export const SearchBar: React.FC<{
   value: string;
@@ -9,46 +11,104 @@ export const SearchBar: React.FC<{
   onSearch: () => void;
   isLoading: boolean;
   isAiMode: boolean;
-}> = ({ value, onChange, onSearch, isLoading, isAiMode }) => {
+  mode: 'search' | 'compare' | 'long-text';
+  onModeChange: (mode: 'search' | 'compare' | 'long-text') => void;
+}> = ({ value, onChange, onSearch, isLoading, isAiMode, mode, onModeChange }) => {
   return (
-    <div className="w-full max-w-2xl mx-auto relative group">
-      <div className="relative flex items-center">
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-          placeholder={isAiMode ? "输入文言文语句进行深度解析..." : "输入单字或词语..."}
-          className="w-full bg-white px-8 py-5 rounded-full shadow-2xl border border-gold/20 focus:outline-none focus:border-cinnabar/50 text-lg font-serif transition-all duration-300 pr-16"
-        />
-        <button
-          onClick={onSearch}
-          disabled={isLoading}
-          className="absolute right-3 p-3 bg-cinnabar text-paper rounded-full hover:bg-cinnabar-light transition-colors shadow-lg disabled:opacity-50"
-        >
-          {isLoading ? <Loader2 className="animate-spin" size={24} /> : <Search size={24} />}
-        </button>
+    <div className="w-full max-w-3xl mx-auto space-y-4">
+      <div className="flex justify-center gap-4 mb-6">
+        {[
+          { id: 'search', label: '词典查询', icon: Search },
+          { id: 'compare', label: '词汇辨析', icon: ArrowRightLeft },
+          { id: 'long-text', label: '长文解析', icon: Sparkles },
+        ].map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onModeChange(m.id as any)}
+            className={`flex items-center gap-2 px-6 py-2 rounded-full font-serif transition-all ${
+              mode === m.id 
+                ? 'bg-cinnabar text-paper shadow-lg scale-105' 
+                : 'bg-paper text-ink/40 hover:text-cinnabar'
+            }`}
+          >
+            <m.icon size={18} />
+            {m.label}
+          </button>
+        ))}
       </div>
-      <div className="mt-2 text-center">
-        <span className="text-ink/30 text-sm font-serif italic">· {value || '之'} ·</span>
+
+      <div className="relative group">
+        <div className="relative flex items-center">
+          {mode === 'long-text' ? (
+            <textarea
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="粘贴整段文言文，AI 将为您深度剖析..."
+              className="w-full bg-white px-8 py-6 rounded-[2rem] shadow-2xl border border-gold/20 focus:outline-none focus:border-cinnabar/50 text-lg font-serif transition-all duration-300 min-h-[200px] resize-none"
+            />
+          ) : (
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+              placeholder={
+                mode === 'compare' 
+                  ? "输入两个词，如：之 其" 
+                  : (isAiMode ? "输入文言语句进行深度解析..." : "输入单字或词语...")
+              }
+              className="w-full bg-white px-8 py-5 rounded-full shadow-2xl border border-gold/20 focus:outline-none focus:border-cinnabar/50 text-lg font-serif transition-all duration-300 pr-16"
+            />
+          )}
+          <button
+            onClick={onSearch}
+            disabled={isLoading}
+            className={`absolute ${mode === 'long-text' ? 'bottom-6 right-6' : 'right-3'} p-3 bg-cinnabar text-paper rounded-full hover:bg-cinnabar-light transition-colors shadow-lg disabled:opacity-50`}
+          >
+            {isLoading ? <Loader2 className="animate-spin" size={24} /> : <Search size={24} />}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
+const THEMES: Record<string, { bg: string, text: string, accent: string }> = {
+  '兵法': { bg: 'bg-[#4A0E0E]', text: 'text-paper', accent: 'border-cinnabar' },
+  '中医': { bg: 'bg-[#2D4A22]', text: 'text-paper', accent: 'border-green-800' },
+  '职官': { bg: 'bg-[#1A2A4A]', text: 'text-paper', accent: 'border-blue-900' },
+  '法律': { bg: 'bg-[#2A2A2A]', text: 'text-paper', accent: 'border-gray-900' },
+  'default': { bg: 'bg-cinnabar', text: 'text-paper', accent: 'border-cinnabar' }
+};
+
 export const DictionaryCard: React.FC<{ entry: DictionaryEntry }> = ({ entry }) => {
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const theme = THEMES[entry.type] || THEMES.default;
+
+  const handleFeedback = async () => {
+    await submitFeedback(entry.character, feedback, 'correction');
+    setIsSubmitted(true);
+    setTimeout(() => {
+      setShowFeedback(false);
+      setIsSubmitted(false);
+      setFeedback('');
+    }, 2000);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gold/10 max-w-xl w-full"
+      className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gold/10 max-w-4xl w-full flex flex-col md:flex-row"
     >
-      <div className="bg-cinnabar p-10 relative overflow-hidden">
-        <div className="relative z-10">
-          <h2 className="text-8xl font-serif text-paper mb-2">{entry.character}</h2>
-          <div className="flex items-center gap-4">
-            <span className="text-paper/80 font-serif text-2xl">[{entry.pinyin}]</span>
-            <span className="bg-paper/20 text-paper text-xs px-3 py-1 rounded-full backdrop-blur-sm">
+      <div className={`${theme.bg} p-10 relative overflow-hidden flex flex-col items-center justify-center md:w-1/3`}>
+        <div className="relative z-10 text-center">
+          <h2 className={`text-9xl font-serif ${theme.text} mb-4`}>{entry.character}</h2>
+          <div className="flex flex-col items-center gap-2">
+            <span className={`${theme.text}/80 font-serif text-2xl`}>[{entry.pinyin}]</span>
+            <span className="bg-paper/20 text-paper text-xs px-4 py-1 rounded-full backdrop-blur-sm">
               {entry.type}
             </span>
           </div>
@@ -58,17 +118,22 @@ export const DictionaryCard: React.FC<{ entry: DictionaryEntry }> = ({ entry }) 
         </div>
       </div>
       
-      <div className="p-10 space-y-8">
-        <div>
-          <h3 className="text-cinnabar font-serif font-bold text-xl mb-4 border-b border-cinnabar/10 pb-2">词义解析</h3>
-          <ul className="space-y-3">
-            {entry.definitions.map((def, i) => (
-              <li key={i} className="flex gap-3 text-ink/80 leading-relaxed">
-                <span className="w-2 h-5 bg-gold/30 rounded-sm mt-1 shrink-0" />
-                {def}
-              </li>
-            ))}
-          </ul>
+      <div className="p-10 flex-1 space-y-8">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <h3 className="text-cinnabar font-serif font-bold text-xl mb-4 border-b border-cinnabar/10 pb-2">词义解析</h3>
+            <ul className="space-y-3">
+              {entry.definitions.map((def, i) => (
+                <li key={i} className="flex gap-3 text-ink/80 leading-relaxed">
+                  <span className="w-2 h-5 bg-gold/30 rounded-sm mt-1 shrink-0" />
+                  {def}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="ml-8 hidden sm:block">
+            <StrokeOrder character={entry.character} size={120} />
+          </div>
         </div>
 
         {entry.examples.length > 0 && (
@@ -87,6 +152,174 @@ export const DictionaryCard: React.FC<{ entry: DictionaryEntry }> = ({ entry }) 
             </div>
           </div>
         )}
+
+        <div className="flex justify-end pt-4">
+          <button 
+            onClick={() => setShowFeedback(true)}
+            className="flex items-center gap-2 text-ink/30 hover:text-cinnabar transition-colors text-sm font-serif"
+          >
+            <MessageSquare size={16} />
+            纠错/补充
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {showFeedback && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <div className="bg-paper w-full max-w-md p-8 rounded-[2rem] shadow-2xl space-y-6">
+              {isSubmitted ? (
+                <div className="py-12 text-center space-y-4">
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
+                    <Sparkles size={32} />
+                  </div>
+                  <h3 className="text-2xl font-serif font-bold text-green-800">提交成功</h3>
+                  <p className="text-ink/60">感谢您的反馈，我们将尽快核实！</p>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-2xl font-serif font-bold text-cinnabar">提供反馈</h3>
+                  <textarea
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    placeholder="请输入您的纠错建议或补充例句..."
+                    className="w-full h-32 bg-white border border-gold/20 rounded-2xl p-4 focus:outline-none focus:border-cinnabar/50 font-serif"
+                  />
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => setShowFeedback(false)}
+                      className="flex-1 py-3 border border-ink/10 rounded-full font-serif hover:bg-ink/5 transition-colors"
+                    >
+                      取消
+                    </button>
+                    <button 
+                      onClick={handleFeedback}
+                      className="flex-1 py-3 bg-cinnabar text-paper rounded-full font-serif shadow-lg hover:bg-cinnabar-light transition-colors"
+                    >
+                      提交
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+export const ComparisonCard: React.FC<{ result: ComparisonResult }> = ({ result }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl border border-gold/10 overflow-hidden"
+    >
+      <div className="bg-ink p-10 text-paper">
+        <div className="flex items-center gap-4 mb-4">
+          <ArrowRightLeft className="text-gold" size={32} />
+          <h2 className="text-3xl font-serif font-bold">词汇深度辨析</h2>
+        </div>
+        <div className="flex gap-4">
+          {result.words.map((w, i) => (
+            <span key={i} className="text-5xl font-serif text-gold">{w}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-10 space-y-10">
+        <section>
+          <h3 className="text-cinnabar font-serif font-bold text-xl mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 bg-cinnabar rounded-full" />
+            共通之处
+          </h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            {result.similarities.map((s, i) => (
+              <div key={i} className="bg-paper p-4 rounded-2xl border border-gold/10 text-ink/80">
+                {s}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-cinnabar font-serif font-bold text-xl mb-6 flex items-center gap-2">
+            <span className="w-2 h-2 bg-cinnabar rounded-full" />
+            差异对比
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gold/20">
+                  <th className="py-4 px-6 text-left text-ink/40 font-serif font-normal">维度</th>
+                  {result.words.map((w, i) => (
+                    <th key={i} className="py-4 px-6 text-left text-cinnabar font-serif text-xl">{w}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.differences.map((d, i) => (
+                  <tr key={i} className="border-b border-gold/10 hover:bg-paper/30 transition-colors">
+                    <td className="py-6 px-6 font-bold text-ink/60">{d.aspect}</td>
+                    {d.explanations.map((exp, j) => (
+                      <td key={j} className="py-6 px-6 text-ink/80 leading-relaxed">{exp}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="bg-paper p-8 rounded-[2rem] border border-gold/20">
+          <h3 className="text-sm uppercase tracking-widest text-ink/40 font-bold mb-3">辨析总结</h3>
+          <p className="text-lg font-serif italic text-ink/90 leading-relaxed">
+            {result.summary}
+          </p>
+        </section>
+      </div>
+    </motion.div>
+  );
+};
+
+export const DailyWordCard: React.FC<{ daily: DailyWord }> = ({ daily }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="bg-white rounded-[2.5rem] shadow-xl border border-gold/10 overflow-hidden max-w-sm w-full group"
+    >
+      <div className="relative h-48 overflow-hidden">
+        <img 
+          src={daily.imageUrl} 
+          alt="Daily Word" 
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent flex items-end p-6">
+          <div className="flex items-center gap-2 text-paper/60 text-xs uppercase tracking-widest">
+            <ImageIcon size={14} />
+            每日一雅
+          </div>
+        </div>
+      </div>
+      <div className="p-8 space-y-4">
+        <div className="flex items-baseline gap-3">
+          <h3 className="text-5xl font-serif text-cinnabar">{daily.entry.character}</h3>
+          <span className="text-ink/40 font-serif">[{daily.entry.pinyin}]</span>
+        </div>
+        <p className="text-ink/70 line-clamp-2 text-sm leading-relaxed">
+          {daily.entry.definitions[0]}
+        </p>
+        <div className="pt-4 border-t border-gold/10">
+          <p className="text-xs text-ink/30 italic font-serif">“{daily.quote}”</p>
+        </div>
       </div>
     </motion.div>
   );

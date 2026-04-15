@@ -29,7 +29,7 @@ async function startServer() {
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-1.5-pro",
         contents: `请对以下文言文进行深度解析：\n\n"${text}"`,
         config: {
           systemInstruction: `你是一位博学古今的文言文专家。
@@ -76,6 +76,70 @@ async function startServer() {
       console.error("Gemini Error:", error);
       res.status(500).json({ error: "Failed to analyze text" });
     }
+  });
+
+  app.post("/api/analyze/compare", async (req, res) => {
+    const { words } = req.body;
+    if (!words || !Array.isArray(words) || words.length < 2) {
+      return res.status(400).json({ error: "At least two words are required" });
+    }
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-1.5-pro",
+        contents: `请对比以下文言词汇的用法：\n\n"${words.join(" 和 ")}"`,
+        config: {
+          systemInstruction: `你是一位博学古今的文言文专家。
+你的任务是对比两个或多个文言词汇的异同，包括词性、用法、语境以及典型例句。
+请务必以 JSON 格式返回结果。`,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              words: { type: Type.ARRAY, items: { type: Type.STRING } },
+              similarities: { type: Type.ARRAY, items: { type: Type.STRING } },
+              differences: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    aspect: { type: Type.STRING },
+                    explanations: { type: Type.ARRAY, items: { type: Type.STRING } }
+                  },
+                  required: ["aspect", "explanations"]
+                }
+              },
+              summary: { type: Type.STRING }
+            },
+            required: ["words", "similarities", "differences", "summary"]
+          }
+        }
+      });
+
+      const result = JSON.parse(response.text || "{}");
+      res.json(result);
+    } catch (error) {
+      console.error("Gemini Error:", error);
+      res.status(500).json({ error: "Failed to compare words" });
+    }
+  });
+
+  app.get("/api/dictionary/daily", (req, res) => {
+    const keys = Object.keys(MOCK_DICTIONARY);
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    const entry = (MOCK_DICTIONARY as any)[randomKey];
+    
+    res.json({
+      entry,
+      imageUrl: `https://picsum.photos/seed/${encodeURIComponent(randomKey)}/800/450`,
+      quote: "博观而约取，厚积而薄发。"
+    });
+  });
+
+  app.post("/api/feedback", (req, res) => {
+    const { word, feedback, type } = req.body;
+    console.log("User Feedback Received:", { word, feedback, type });
+    res.json({ success: true });
   });
 
   // D1 Mock/Proxy (For local dev, in CF this would be env.DB)

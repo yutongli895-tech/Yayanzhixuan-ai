@@ -1,19 +1,34 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Navbar, StatusCard } from './components/UI';
-import { SearchBar, DictionaryCard, AIAnalysisCard } from './components/SearchAndResults';
+import { SearchBar, DictionaryCard, AIAnalysisCard, ComparisonCard, DailyWordCard } from './components/SearchAndResults';
 import { AdminPanel } from './components/AdminPanel';
-import { MOCK_DICTIONARY } from './constants';
-import { analyzeClassicalChinese } from './services/geminiService';
-import { DictionaryEntry, AIAnalysisResult } from './types';
+import { analyzeClassicalChinese, compareWords, getDailyWord } from './services/geminiService';
+import { DictionaryEntry, AIAnalysisResult, ComparisonResult, DailyWord } from './types';
 
 export default function App() {
   const [query, setQuery] = useState('');
+  const [mode, setMode] = useState<'search' | 'compare' | 'long-text'>('search');
   const [isAiMode, setIsAiMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [dictionaryResult, setDictionaryResult] = useState<DictionaryEntry | null>(null);
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
+  const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
+  const [dailyWord, setDailyWord] = useState<DailyWord | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+
+  useEffect(() => {
+    const fetchDaily = async () => {
+      try {
+        const daily = await getDailyWord();
+        setDailyWord(daily);
+      } catch (err) {
+        console.error('Failed to fetch daily word:', err);
+      }
+    };
+    fetchDaily();
+  }, []);
 
   // Secret shortcut to open admin: Double click footer
   const handleFooterClick = (e: any) => {
@@ -26,11 +41,23 @@ export default function App() {
     if (!query.trim()) return;
 
     setIsLoading(true);
+    setError(null);
     setDictionaryResult(null);
     setAiResult(null);
+    setComparisonResult(null);
 
     try {
-      if (isAiMode) {
+      if (mode === 'compare') {
+        const words = query.split(/[\s,，]+/).filter(Boolean);
+        if (words.length >= 2) {
+          const result = await compareWords(words);
+          setComparisonResult(result);
+        } else {
+          setError('请输入至少两个词语进行辨析（如：之 其），用空格或逗号分隔。');
+          setIsLoading(false);
+          return;
+        }
+      } else if (mode === 'long-text' || isAiMode) {
         const result = await analyzeClassicalChinese(query);
         setAiResult(result);
       } else {
@@ -45,8 +72,9 @@ export default function App() {
           setAiResult(fallbackResult);
         }
       }
-    } catch (error) {
-      console.error('Search error:', error);
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('研读古籍时遇到了些许阻碍，请稍后重试。');
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +103,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               className="text-5xl md:text-7xl font-serif font-bold tracking-tight text-ink"
             >
-              {isAiMode ? '文言深度解析' : '博学古今，通晓文言'}
+              {mode === 'compare' ? '词汇深度辨析' : mode === 'long-text' ? '长文一键解析' : (isAiMode ? '文言深度解析' : '博学古今，通晓文言')}
             </motion.h2>
             <motion.p 
               initial={{ opacity: 0 }}
@@ -83,31 +111,44 @@ export default function App() {
               transition={{ delay: 0.2 }}
               className="text-ink/40 font-serif text-lg tracking-[0.2em]"
             >
-              {isAiMode ? 'AI 深度解析，让每一粒方块字重焕生机' : '· 读书百遍，其义自见 ·'}
+              {mode === 'compare' ? '· 析微察异，明辨古今 ·' : mode === 'long-text' ? '· 剥茧抽丝，洞见微言 ·' : (isAiMode ? 'AI 深度解析，让每一粒方块字重焕生机' : '· 读书百遍，其义自见 ·')}
             </motion.p>
           </div>
 
           {/* Search Section */}
-          <div className="w-full flex flex-col md:flex-row gap-8 items-start justify-center">
-            <div className="flex-1 w-full max-w-2xl">
+          <div className="w-full flex flex-col lg:flex-row gap-12 items-start justify-center">
+            <div className="flex-1 w-full max-w-3xl">
               <SearchBar 
                 value={query} 
                 onChange={setQuery} 
                 onSearch={handleSearch} 
                 isLoading={isLoading}
                 isAiMode={isAiMode}
+                mode={mode}
+                onModeChange={setMode}
               />
             </div>
             
-            <div className="hidden lg:block">
+            <div className="hidden xl:block w-80 shrink-0 space-y-8">
               <StatusCard />
+              {dailyWord && <DailyWordCard daily={dailyWord} />}
             </div>
           </div>
 
           {/* Results Section */}
           <div className="w-full flex justify-center pb-20">
             <AnimatePresence mode="wait">
-              {isLoading ? (
+              {error ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mt-20 p-6 bg-cinnabar/5 border border-cinnabar/20 rounded-3xl text-cinnabar font-serif text-center max-w-md"
+                >
+                  {error}
+                </motion.div>
+              ) : isLoading ? (
                 <motion.div
                   key="loading"
                   initial={{ opacity: 0 }}
@@ -122,6 +163,8 @@ export default function App() {
                 <DictionaryCard key="dict" entry={dictionaryResult} />
               ) : aiResult ? (
                 <AIAnalysisCard key="ai" result={aiResult} />
+              ) : comparisonResult ? (
+                <ComparisonCard key="compare" result={comparisonResult} />
               ) : (
                 <motion.div
                   key="empty"
