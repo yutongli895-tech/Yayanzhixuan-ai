@@ -62,7 +62,7 @@ export default function App() {
         setAiResult(result);
       } else {
         // 1. Try D1 lookup via backend
-        const response = await fetch(`/api/dictionary/lookup?word=${encodeURIComponent(query.trim())}`);
+        const response = await fetch(`/api/lookup?word=${encodeURIComponent(query.trim())}`);
         if (response.ok) {
           const entry = await response.json();
           setDictionaryResult(entry);

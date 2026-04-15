@@ -30,7 +30,7 @@ export const StatusCard: React.FC = () => {
   const [status, setStatus] = React.useState({ database: 'connecting', count: 0 });
 
   React.useEffect(() => {
-    fetch('/api/dictionary/status')
+    fetch('/api/status')
       .then(res => res.json())
       .then(data => setStatus(data))
       .catch(() => setStatus({ database: 'error', count: 0 }));
