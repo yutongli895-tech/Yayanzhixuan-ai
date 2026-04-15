@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Navbar, StatusCard } from './components/UI';
 import { SearchBar, DictionaryCard, AIAnalysisCard } from './components/SearchAndResults';
+import { AdminPanel } from './components/AdminPanel';
 import { MOCK_DICTIONARY } from './constants';
 import { analyzeClassicalChinese } from './services/geminiService';
 import { DictionaryEntry, AIAnalysisResult } from './types';
@@ -12,6 +13,14 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [dictionaryResult, setDictionaryResult] = useState<DictionaryEntry | null>(null);
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  // Secret shortcut to open admin: Double click footer
+  const handleFooterClick = (e: any) => {
+    if (e.detail === 2) {
+      setShowAdmin(true);
+    }
+  };
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -130,12 +139,19 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="py-12 border-t border-gold/10 text-center space-y-2">
+      <footer 
+        onClick={handleFooterClick}
+        className="py-12 border-t border-gold/10 text-center space-y-2 cursor-default select-none"
+      >
         <p className="font-serif text-ink/40 tracking-widest text-sm">雅言智选 · 文脉传承</p>
         <p className="text-[10px] text-ink/20 uppercase tracking-tighter">
           © 2026 Digitally Preserved & Cloudflare Native
         </p>
       </footer>
+
+      <AnimatePresence>
+        {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
