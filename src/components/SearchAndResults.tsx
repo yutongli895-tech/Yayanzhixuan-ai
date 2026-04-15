@@ -16,7 +16,7 @@ export const SearchBar: React.FC<{
 }> = ({ value, onChange, onSearch, isLoading, isAiMode, mode, onModeChange }) => {
   return (
     <div className="w-full max-w-3xl mx-auto space-y-4">
-      <div className="flex justify-center gap-4 mb-6">
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-6">
         {[
           { id: 'search', label: '词典查询', icon: Search },
           { id: 'compare', label: '词汇辨析', icon: ArrowRightLeft },
@@ -25,13 +25,13 @@ export const SearchBar: React.FC<{
           <button
             key={m.id}
             onClick={() => onModeChange(m.id as any)}
-            className={`flex items-center gap-2 px-6 py-2 rounded-full font-serif transition-all ${
+            className={`flex items-center gap-2 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-serif text-sm sm:text-base transition-all ${
               mode === m.id 
                 ? 'bg-cinnabar text-paper shadow-lg scale-105' 
                 : 'bg-paper text-ink/40 hover:text-cinnabar'
             }`}
           >
-            <m.icon size={18} />
+            <m.icon size={16} className="sm:w-[18px] sm:h-[18px]" />
             {m.label}
           </button>
         ))}
@@ -44,7 +44,7 @@ export const SearchBar: React.FC<{
               value={value}
               onChange={(e) => onChange(e.target.value)}
               placeholder="粘贴整段文言文，AI 将为您深度剖析..."
-              className="w-full bg-white px-8 py-6 rounded-[2rem] shadow-2xl border border-gold/20 focus:outline-none focus:border-cinnabar/50 text-lg font-serif transition-all duration-300 min-h-[200px] resize-none"
+              className="w-full bg-white px-6 sm:px-8 py-4 sm:py-6 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl border border-gold/20 focus:outline-none focus:border-cinnabar/50 text-base sm:text-lg font-serif transition-all duration-300 min-h-[150px] sm:min-h-[200px] resize-none"
             />
           ) : (
             <input
@@ -57,15 +57,15 @@ export const SearchBar: React.FC<{
                   ? "输入两个词，如：之 其" 
                   : (isAiMode ? "输入文言语句进行深度解析..." : "输入单字或词语...")
               }
-              className="w-full bg-white px-8 py-5 rounded-full shadow-2xl border border-gold/20 focus:outline-none focus:border-cinnabar/50 text-lg font-serif transition-all duration-300 pr-16"
+              className="w-full bg-white px-6 sm:px-8 py-4 sm:py-5 rounded-full shadow-2xl border border-gold/20 focus:outline-none focus:border-cinnabar/50 text-base sm:text-lg font-serif transition-all duration-300 pr-14 sm:pr-16"
             />
           )}
           <button
             onClick={onSearch}
             disabled={isLoading}
-            className={`absolute ${mode === 'long-text' ? 'bottom-6 right-6' : 'right-3'} p-3 bg-cinnabar text-paper rounded-full hover:bg-cinnabar-light transition-colors shadow-lg disabled:opacity-50`}
+            className={`absolute ${mode === 'long-text' ? 'bottom-4 right-4 sm:bottom-6 sm:right-6' : 'right-2 sm:right-3'} p-2.5 sm:p-3 bg-cinnabar text-paper rounded-full hover:bg-cinnabar-light transition-colors shadow-lg disabled:opacity-50`}
           >
-            {isLoading ? <Loader2 className="animate-spin" size={24} /> : <Search size={24} />}
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Search size={20} className="sm:w-6 sm:h-6" />}
           </button>
         </div>
       </div>
@@ -101,64 +101,64 @@ export const DictionaryCard: React.FC<{ entry: DictionaryEntry }> = ({ entry }) 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gold/10 max-w-4xl w-full flex flex-col md:flex-row"
+      className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden border border-gold/10 max-w-4xl w-full flex flex-col md:flex-row"
     >
-      <div className={`${theme.bg} p-10 relative overflow-hidden flex flex-col items-center justify-center md:w-1/3`}>
+      <div className={`${theme.bg} p-6 sm:p-10 relative overflow-hidden flex flex-col items-center justify-center md:w-1/3`}>
         <div className="relative z-10 text-center">
-          <h2 className={`text-9xl font-serif ${theme.text} mb-4`}>{entry.character}</h2>
+          <h2 className={`text-7xl sm:text-9xl font-serif ${theme.text} mb-2 sm:mb-4`}>{entry.character}</h2>
           <div className="flex flex-col items-center gap-2">
-            <span className={`${theme.text}/80 font-serif text-2xl`}>[{entry.pinyin}]</span>
-            <span className="bg-paper/20 text-paper text-xs px-4 py-1 rounded-full backdrop-blur-sm">
+            <span className={`${theme.text}/80 font-serif text-xl sm:text-2xl`}>[{entry.pinyin}]</span>
+            <span className="bg-paper/20 text-paper text-[10px] sm:text-xs px-3 sm:px-4 py-0.5 sm:py-1 rounded-full backdrop-blur-sm">
               {entry.type}
             </span>
           </div>
         </div>
         <div className="absolute right-[-20px] bottom-[-20px] opacity-10 pointer-events-none">
-          <BookOpenIcon size={200} />
+          <BookOpenIcon size={150} />
         </div>
       </div>
       
-      <div className="p-10 flex-1 space-y-8">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <h3 className="text-cinnabar font-serif font-bold text-xl mb-4 border-b border-cinnabar/10 pb-2">词义解析</h3>
-            <ul className="space-y-3">
+      <div className="p-6 sm:p-10 flex-1 space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
+          <div className="flex-1 w-full">
+            <h3 className="text-cinnabar font-serif font-bold text-lg sm:text-xl mb-3 sm:mb-4 border-b border-cinnabar/10 pb-2">词义解析</h3>
+            <ul className="space-y-2 sm:space-y-3">
               {entry.definitions.map((def, i) => (
-                <li key={i} className="flex gap-3 text-ink/80 leading-relaxed">
-                  <span className="w-2 h-5 bg-gold/30 rounded-sm mt-1 shrink-0" />
+                <li key={i} className="flex gap-3 text-ink/80 leading-relaxed text-sm sm:text-base">
+                  <span className="w-1.5 h-4 sm:w-2 sm:h-5 bg-gold/30 rounded-sm mt-1 shrink-0" />
                   {def}
                 </li>
               ))}
             </ul>
           </div>
-          <div className="ml-8 hidden sm:block">
-            <StrokeOrder character={entry.character} size={120} />
+          <div className="w-full sm:w-auto flex justify-center sm:block sm:ml-8">
+            <StrokeOrder character={entry.character} size={100} />
           </div>
         </div>
 
         {entry.examples.length > 0 && (
-          <div className="bg-paper/50 p-6 rounded-3xl border border-gold/20 relative">
-            <div className="absolute top-4 left-4 text-cinnabar/20">
-              <QuoteIcon size={32} />
+          <div className="bg-paper/50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gold/20 relative">
+            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 text-cinnabar/20">
+              <QuoteIcon size={24} className="sm:w-8 sm:h-8" />
             </div>
-            <h4 className="text-cinnabar font-serif font-bold mb-3 ml-8">经典例句</h4>
-            <div className="space-y-4 ml-8">
+            <h4 className="text-cinnabar font-serif font-bold mb-2 sm:mb-3 ml-6 sm:ml-8 text-sm sm:text-base">经典例句</h4>
+            <div className="space-y-3 sm:space-y-4 ml-6 sm:ml-8">
               {entry.examples.map((ex, i) => (
                 <div key={i}>
-                  <p className="text-lg font-serif italic text-ink/90 mb-1">“{ex.text}”</p>
-                  <p className="text-xs text-ink/40">— {ex.source}</p>
+                  <p className="text-base sm:text-lg font-serif italic text-ink/90 mb-1">“{ex.text}”</p>
+                  <p className="text-[10px] sm:text-xs text-ink/40">— {ex.source}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end pt-2 sm:pt-4">
           <button 
             onClick={() => setShowFeedback(true)}
-            className="flex items-center gap-2 text-ink/30 hover:text-cinnabar transition-colors text-sm font-serif"
+            className="flex items-center gap-2 text-ink/30 hover:text-cinnabar transition-colors text-xs sm:text-sm font-serif"
           >
-            <MessageSquare size={16} />
+            <MessageSquare size={14} className="sm:w-4 sm:h-4" />
             纠错/补充
           </button>
         </div>
@@ -219,29 +219,29 @@ export const ComparisonCard: React.FC<{ result: ComparisonResult }> = ({ result 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl border border-gold/10 overflow-hidden"
+      className="w-full max-w-4xl bg-white rounded-[1.5rem] sm:rounded-[3rem] shadow-2xl border border-gold/10 overflow-hidden"
     >
-      <div className="bg-ink p-10 text-paper">
-        <div className="flex items-center gap-4 mb-4">
-          <ArrowRightLeft className="text-gold" size={32} />
-          <h2 className="text-3xl font-serif font-bold">词汇深度辨析</h2>
+      <div className="bg-ink p-6 sm:p-10 text-paper">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
+          <ArrowRightLeft className="text-gold w-6 h-6 sm:w-8 sm:h-8" />
+          <h2 className="text-xl sm:text-3xl font-serif font-bold">词汇深度辨析</h2>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-3 sm:gap-4">
           {result.words.map((w, i) => (
-            <span key={i} className="text-5xl font-serif text-gold">{w}</span>
+            <span key={i} className="text-3xl sm:text-5xl font-serif text-gold">{w}</span>
           ))}
         </div>
       </div>
 
-      <div className="p-10 space-y-10">
+      <div className="p-6 sm:p-10 space-y-8 sm:space-y-10">
         <section>
-          <h3 className="text-cinnabar font-serif font-bold text-xl mb-4 flex items-center gap-2">
+          <h3 className="text-cinnabar font-serif font-bold text-lg sm:text-xl mb-4 flex items-center gap-2">
             <span className="w-2 h-2 bg-cinnabar rounded-full" />
             共通之处
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
             {result.similarities.map((s, i) => (
-              <div key={i} className="bg-paper p-4 rounded-2xl border border-gold/10 text-ink/80">
+              <div key={i} className="bg-paper p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-gold/10 text-ink/80 text-sm sm:text-base">
                 {s}
               </div>
             ))}
@@ -249,26 +249,26 @@ export const ComparisonCard: React.FC<{ result: ComparisonResult }> = ({ result 
         </section>
 
         <section>
-          <h3 className="text-cinnabar font-serif font-bold text-xl mb-6 flex items-center gap-2">
+          <h3 className="text-cinnabar font-serif font-bold text-lg sm:text-xl mb-4 sm:mb-6 flex items-center gap-2">
             <span className="w-2 h-2 bg-cinnabar rounded-full" />
             差异对比
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+          <div className="overflow-x-auto -mx-6 sm:mx-0 px-6 sm:px-0">
+            <table className="w-full border-collapse min-w-[500px]">
               <thead>
                 <tr className="border-b border-gold/20">
-                  <th className="py-4 px-6 text-left text-ink/40 font-serif font-normal">维度</th>
+                  <th className="py-3 sm:py-4 px-4 sm:px-6 text-left text-ink/40 font-serif font-normal text-xs sm:text-sm">维度</th>
                   {result.words.map((w, i) => (
-                    <th key={i} className="py-4 px-6 text-left text-cinnabar font-serif text-xl">{w}</th>
+                    <th key={i} className="py-3 sm:py-4 px-4 sm:px-6 text-left text-cinnabar font-serif text-lg sm:text-xl">{w}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {result.differences.map((d, i) => (
                   <tr key={i} className="border-b border-gold/10 hover:bg-paper/30 transition-colors">
-                    <td className="py-6 px-6 font-bold text-ink/60">{d.aspect}</td>
+                    <td className="py-4 sm:py-6 px-4 sm:px-6 font-bold text-ink/60 text-sm sm:text-base">{d.aspect}</td>
                     {d.explanations.map((exp, j) => (
-                      <td key={j} className="py-6 px-6 text-ink/80 leading-relaxed">{exp}</td>
+                      <td key={j} className="py-4 sm:py-6 px-4 sm:px-6 text-ink/80 leading-relaxed text-sm sm:text-base">{exp}</td>
                     ))}
                   </tr>
                 ))}
@@ -277,9 +277,9 @@ export const ComparisonCard: React.FC<{ result: ComparisonResult }> = ({ result 
           </div>
         </section>
 
-        <section className="bg-paper p-8 rounded-[2rem] border border-gold/20">
-          <h3 className="text-sm uppercase tracking-widest text-ink/40 font-bold mb-3">辨析总结</h3>
-          <p className="text-lg font-serif italic text-ink/90 leading-relaxed">
+        <section className="bg-paper p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-gold/20">
+          <h3 className="text-[10px] sm:text-sm uppercase tracking-widest text-ink/40 font-bold mb-2 sm:mb-3">辨析总结</h3>
+          <p className="text-base sm:text-lg font-serif italic text-ink/90 leading-relaxed">
             {result.summary}
           </p>
         </section>
@@ -330,32 +330,32 @@ export const AIAnalysisCard: React.FC<{ result: AIAnalysisResult }> = ({ result 
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="w-full max-w-4xl space-y-8"
+      className="w-full max-w-4xl space-y-6 sm:space-y-8"
     >
-      <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-gold/10">
-        <div className="flex items-center gap-3 mb-8">
-          <Sparkles className="text-cinnabar" size={28} />
-          <h2 className="text-2xl font-serif font-bold text-cinnabar">AI 深度解析报告</h2>
+      <div className="bg-white p-6 sm:p-10 rounded-[1.5rem] sm:rounded-[3rem] shadow-2xl border border-gold/10">
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <Sparkles className="text-cinnabar w-6 h-6 sm:w-7 sm:h-7" />
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-cinnabar">AI 深度解析报告</h2>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12">
-          <div className="space-y-8">
+        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12">
+          <div className="space-y-6 sm:space-y-8">
             <section>
-              <h3 className="text-sm uppercase tracking-widest text-ink/40 font-bold mb-4">现代汉语翻译</h3>
-              <p className="text-xl font-serif leading-relaxed text-ink/90 bg-paper p-6 rounded-2xl border border-gold/10">
+              <h3 className="text-[10px] sm:text-sm uppercase tracking-widest text-ink/40 font-bold mb-3 sm:mb-4">现代汉语翻译</h3>
+              <p className="text-lg sm:text-xl font-serif leading-relaxed text-ink/90 bg-paper p-5 sm:p-6 rounded-2xl border border-gold/10">
                 {result.translation}
               </p>
             </section>
 
             <section>
-              <h3 className="text-sm uppercase tracking-widest text-ink/40 font-bold mb-4">句法拆解</h3>
-              <div className="space-y-4">
+              <h3 className="text-[10px] sm:text-sm uppercase tracking-widest text-ink/40 font-bold mb-3 sm:mb-4">句法拆解</h3>
+              <div className="space-y-3 sm:space-y-4">
                 {result.syntax.map((s, i) => (
-                  <div key={i} className="flex gap-4 group">
+                  <div key={i} className="flex gap-3 sm:gap-4 group">
                     <div className="w-1 bg-cinnabar/20 group-hover:bg-cinnabar transition-colors rounded-full" />
                     <div>
-                      <h4 className="font-bold text-cinnabar text-sm mb-1">{s.point}</h4>
-                      <p className="text-sm text-ink/70">{s.explanation}</p>
+                      <h4 className="font-bold text-cinnabar text-xs sm:text-sm mb-1">{s.point}</h4>
+                      <p className="text-xs sm:text-sm text-ink/70">{s.explanation}</p>
                     </div>
                   </div>
                 ))}
@@ -363,26 +363,26 @@ export const AIAnalysisCard: React.FC<{ result: AIAnalysisResult }> = ({ result 
             </section>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             <section>
-              <h3 className="text-sm uppercase tracking-widest text-ink/40 font-bold mb-4">重点词汇剖析</h3>
-              <div className="grid gap-4">
+              <h3 className="text-[10px] sm:text-sm uppercase tracking-widest text-ink/40 font-bold mb-3 sm:mb-4">重点词汇剖析</h3>
+              <div className="grid gap-3 sm:gap-4">
                 {result.keyWords.map((kw, i) => (
-                  <div key={i} className="bg-paper/50 p-5 rounded-2xl border border-gold/10 hover:border-cinnabar/20 transition-all">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-lg font-serif font-bold text-cinnabar">{kw.word}</span>
-                      <span className="text-xs text-ink/40 italic">{kw.meaning}</span>
+                  <div key={i} className="bg-paper/50 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-gold/10 hover:border-cinnabar/20 transition-all">
+                    <div className="flex justify-between items-center mb-1 sm:mb-2">
+                      <span className="text-base sm:text-lg font-serif font-bold text-cinnabar">{kw.word}</span>
+                      <span className="text-[10px] sm:text-xs text-ink/40 italic">{kw.meaning}</span>
                     </div>
-                    <p className="text-xs text-ink/60 leading-relaxed">{kw.usage}</p>
+                    <p className="text-[10px] sm:text-xs text-ink/60 leading-relaxed">{kw.usage}</p>
                   </div>
                 ))}
               </div>
             </section>
 
             {result.culturalContext && (
-              <section className="bg-cinnabar/5 p-6 rounded-2xl border border-cinnabar/10">
-                <h3 className="text-xs uppercase tracking-widest text-cinnabar/60 font-bold mb-3">文化背景</h3>
-                <p className="text-sm text-ink/80 leading-relaxed italic">
+              <section className="bg-cinnabar/5 p-5 sm:p-6 rounded-2xl border border-cinnabar/10">
+                <h3 className="text-[10px] sm:text-sm uppercase tracking-widest text-cinnabar/60 font-bold mb-2 sm:mb-3">文化背景</h3>
+                <p className="text-xs sm:text-sm text-ink/80 leading-relaxed italic">
                   {result.culturalContext}
                 </p>
               </section>
@@ -395,15 +395,15 @@ export const AIAnalysisCard: React.FC<{ result: AIAnalysisResult }> = ({ result 
 };
 
 // Helper Icons
-const BookOpenIcon = ({ size }: { size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+const BookOpenIcon = ({ size, className }: { size: number; className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
   </svg>
 );
 
-const QuoteIcon = ({ size }: { size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+const QuoteIcon = ({ size, className }: { size: number; className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
     <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C20.1216 16 21.017 16.8954 21.017 18V21C21.017 22.1046 20.1216 23 19.017 23H16.017C14.9124 23 14.017 22.1046 14.017 21ZM14.017 11L14.017 8C14.017 6.89543 14.9124 6 16.017 6H19.017C20.1216 6 21.017 6.89543 21.017 8V11C21.017 12.1046 20.1216 13 19.017 13H16.017C14.9124 13 14.017 12.1046 14.017 11ZM3 21L3 18C3 16.8954 3.89543 16 5 16H8C9.10457 16 10 16.8954 10 18V21C10 22.1046 9.10457 23 8 23H5C3.89543 23 3 22.1046 3 21ZM3 11L3 8C3 6.89543 3.89543 6 5 6H8C9.10457 6 10 6.89543 10 8V11C10 12.1046 9.10457 13 8 13H5C3.89543 13 3 12.1046 3 11Z" />
   </svg>
 );

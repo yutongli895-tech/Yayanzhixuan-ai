@@ -84,24 +84,24 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <Navbar isAiMode={isAiMode} onToggleMode={() => setIsAiMode(!isAiMode)} />
       
-      <main className="flex-1 container mx-auto px-8 py-12 relative">
+      <main className="flex-1 container mx-auto px-4 sm:px-8 py-8 sm:py-12 relative">
         {/* Background Decorative Elements */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10">
-          <div className="absolute top-20 right-10 opacity-5 calligraphy text-[20rem] select-none">
+          <div className="absolute top-20 right-10 opacity-5 calligraphy text-[10rem] sm:text-[20rem] select-none">
             文言
           </div>
-          <div className="absolute bottom-20 left-10 opacity-5 calligraphy text-[15rem] select-none">
+          <div className="absolute bottom-20 left-10 opacity-5 calligraphy text-[8rem] sm:text-[15rem] select-none">
             智慧
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-16">
+        <div className="flex flex-col items-center gap-8 sm:gap-16">
           {/* Hero Section */}
-          <div className="text-center space-y-6">
+          <div className="text-center space-y-4 sm:space-y-6">
             <motion.h2 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-5xl md:text-7xl font-serif font-bold tracking-tight text-ink"
+              className="text-3xl sm:text-5xl md:text-7xl font-serif font-bold tracking-tight text-ink"
             >
               {mode === 'compare' ? '词汇深度辨析' : mode === 'long-text' ? '长文一键解析' : (isAiMode ? '文言深度解析' : '博学古今，通晓文言')}
             </motion.h2>
@@ -109,14 +109,14 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-ink/40 font-serif text-lg tracking-[0.2em]"
+              className="text-ink/40 font-serif text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.2em]"
             >
               {mode === 'compare' ? '· 析微察异，明辨古今 ·' : mode === 'long-text' ? '· 剥茧抽丝，洞见微言 ·' : (isAiMode ? 'AI 深度解析，让每一粒方块字重焕生机' : '· 读书百遍，其义自见 ·')}
             </motion.p>
           </div>
 
           {/* Search Section */}
-          <div className="w-full flex flex-col lg:flex-row gap-12 items-start justify-center">
+          <div className="w-full flex flex-col xl:flex-row gap-8 sm:gap-12 items-start justify-center">
             <div className="flex-1 w-full max-w-3xl">
               <SearchBar 
                 value={query} 
@@ -129,7 +129,7 @@ export default function App() {
               />
             </div>
             
-            <div className="hidden xl:block w-80 shrink-0 space-y-8">
+            <div className="w-full xl:w-80 shrink-0 flex flex-col sm:flex-row xl:flex-col gap-6 sm:gap-8">
               <StatusCard />
               {dailyWord && <DailyWordCard daily={dailyWord} />}
             </div>

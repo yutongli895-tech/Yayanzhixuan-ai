@@ -3,12 +3,12 @@ import { BookOpen, Database, Sparkles } from 'lucide-react';
 
 export const Navbar: React.FC<{ isAiMode: boolean; onToggleMode: () => void }> = ({ isAiMode, onToggleMode }) => {
   return (
-    <nav className="flex items-center justify-between px-8 py-6 bg-paper/80 backdrop-blur-md sticky top-0 z-50 border-b border-gold/20">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-cinnabar flex items-center justify-center rounded-lg shadow-lg">
-          <span className="text-paper font-serif text-2xl font-bold">雅</span>
+    <nav className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-6 bg-paper/80 backdrop-blur-md sticky top-0 z-50 border-b border-gold/20">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-cinnabar flex items-center justify-center rounded-lg shadow-lg">
+          <span className="text-paper font-serif text-xl sm:text-2xl font-bold">雅</span>
         </div>
-        <h1 className="text-xl font-serif font-bold tracking-widest text-cinnabar">雅言智选</h1>
+        <h1 className="text-lg sm:text-xl font-serif font-bold tracking-widest text-cinnabar">雅言智选</h1>
       </div>
 
       <button
@@ -37,7 +37,7 @@ export const StatusCard: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-white p-6 rounded-3xl shadow-xl border border-gold/10 w-64 animate-in fade-in slide-in-from-right duration-700">
+    <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-xl border border-gold/10 w-full sm:w-64 animate-in fade-in slide-in-from-right duration-700">
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-cinnabar/10 rounded-xl">
           <Database className="text-cinnabar" size={20} />
