@@ -26,7 +26,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const ai = new GoogleGenAI({ apiKey: selectedKey });
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-1.5-pro",
       contents: `请对以下文言文进行深度解析：\n\n"${text}"`,
       config: {
         systemInstruction: `你是一位博学古今的文言文专家。
