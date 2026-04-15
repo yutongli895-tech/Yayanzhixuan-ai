@@ -11,19 +11,20 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   try {
-    const result = await context.env.DB.prepare(
-      "SELECT * FROM dictionary WHERE character = ?"
-    ).bind(word).first();
+    if (context.env.DB) {
+      const result = await context.env.DB.prepare(
+        "SELECT * FROM dictionary WHERE character = ?"
+      ).bind(word).first();
 
-    if (result) {
-      // 解析存储为字符串的 JSON 字段
-      return new Response(JSON.stringify({
-        ...result,
-        definitions: JSON.parse(result.definitions as string),
-        examples: JSON.parse(result.examples as string)
-      }), {
-        headers: { "Content-Type": "application/json" }
-      });
+      if (result) {
+        return new Response(JSON.stringify({
+          ...result,
+          definitions: JSON.parse(result.definitions as string),
+          examples: JSON.parse(result.examples as string)
+        }), {
+          headers: { "Content-Type": "application/json" }
+        });
+      }
     }
 
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });

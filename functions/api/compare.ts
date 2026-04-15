@@ -11,10 +11,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { words } = body;
 
   if (!words || !Array.isArray(words) || words.length < 2) {
-    return new Response(JSON.stringify({ error: "At least two words are required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: "At least two words are required" }), { status: 400 });
+  }
+
+  if (!env.GEMINI_API_KEY) {
+    return new Response(JSON.stringify({ error: "GEMINI_API_KEY is not configured" }), { status: 500 });
   }
 
   try {
@@ -26,9 +27,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       model: "gemini-1.5-pro",
       contents: `请对比以下文言词汇的用法：\n\n"${words.join(" 和 ")}"`,
       config: {
-        systemInstruction: `你是一位博学古今的文言文专家。
-你的任务是对比两个或多个文言词汇的异同，包括词性、用法、语境以及典型例句。
-请务必以 JSON 格式返回结果。`,
+        systemInstruction: `你是一位博学古今的文言文专家。你的任务是对比两个或多个文言词汇的异同，包括词性、用法、语境以及典型例句。请务必以 JSON 格式返回结果。`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -53,16 +52,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       }
     });
 
-    const result = JSON.parse(response.text || "{}");
-
-    return new Response(JSON.stringify(result), {
+    return new Response(response.text, {
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    return new Response(JSON.stringify({ error: "AI Comparison Failed" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message || "AI Comparison Failed" }), { status: 500 });
   }
 };

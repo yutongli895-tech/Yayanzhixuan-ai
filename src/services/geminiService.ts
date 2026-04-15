@@ -17,7 +17,7 @@ export async function analyzeClassicalChinese(text: string): Promise<AIAnalysisR
 }
 
 export async function compareWords(words: string[]): Promise<ComparisonResult> {
-  const response = await fetch("/api/analyze/compare", {
+  const response = await fetch("/api/compare", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -33,7 +33,7 @@ export async function compareWords(words: string[]): Promise<ComparisonResult> {
 }
 
 export async function getDailyWord(): Promise<DailyWord> {
-  const response = await fetch("/api/dictionary/daily");
+  const response = await fetch("/api/daily");
   if (!response.ok) {
     throw new Error("Failed to fetch daily word");
   }
