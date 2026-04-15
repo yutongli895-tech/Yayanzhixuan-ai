@@ -19,8 +19,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   try {
-    // 2. 初始化 Gemini (使用 CF 环境变量)
-    const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+    // 2. 初始化 Gemini (处理逗号隔开的多个 Key)
+    const keys = env.GEMINI_API_KEY.split(",").map(k => k.trim()).filter(Boolean);
+    const selectedKey = keys[Math.floor(Math.random() * keys.length)];
+    
+    const ai = new GoogleGenAI({ apiKey: selectedKey });
 
     const response = await ai.models.generateContent({
       model: "gemini-3.1-pro-preview",
