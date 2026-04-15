@@ -98,6 +98,27 @@ async function startServer() {
     }
   });
 
+  app.post("/api/admin/login", (req, res) => {
+    const { password } = req.body;
+    if (password === process.env.ADMIN_PASSWORD) {
+      res.json({ success: true, token: "mock-admin-token" });
+    } else {
+      res.status(401).json({ success: false, error: "Invalid password" });
+    }
+  });
+
+  app.post("/api/admin/dictionary/add", (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader !== "Bearer mock-admin-token") {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const entry = req.body;
+    console.log("Mock D1 Insert:", entry);
+    // In local dev, we just log it or could update MOCK_DICTIONARY
+    res.json({ success: true });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
