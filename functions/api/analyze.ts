@@ -3,25 +3,8 @@ interface Env {
   DB: D1Database;
 }
 
-const MODELS = [
-  "qwen2.5-72b-instruct",
-  "yi-large",
-  "glm-4-9b-chat",
-];
-
-const SYSTEM_PROMPT = `
-你是一位文言文专家。
-请对以下文言文进行深度解析，并以严格 JSON 格式返回，不要输出任何解释、注释或 Markdown。
-
-字段要求：
-- translation: 现代汉语翻译
-- syntax: [{ point, explanation }]
-- keyWords: [{ word, meaning, usage }]
-- culturalContext: 文化背景说明
-`;
-
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  /* ---------------- CORS ---------------- */
+  /* CORS */
   if (request.method === "OPTIONS") {
     return new Response(null, {
       headers: {
@@ -32,29 +15,29 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     });
   }
 
-  /* ---------------- 参数校验 ---------------- */
-  const { text } = (await request.json().catch(() => ({}))) as { text?: string };
+  /* 参数 */
+  let text: string;
+  try {
+    const body = await request.json<any>();
+    text = body?.text;
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
   if (!text || text.length > 2000) {
     return json({ error: "Text is required or too long" }, 400);
   }
 
-  /* ---------------- API Key ---------------- */
-  const keys = (env.NVIDIA_API_KEY || "")
-    .split(",")
-    .map(k => k.trim())
-    .filter(Boolean);
-
-  if (keys.length === 0) {
-    return json({ error: "NVIDIA_API_KEY not configured" }, 500);
+  /* API Key */
+  const apiKey = env.NVIDIA_API_KEY;
+  if (!apiKey) {
+    return json({ error: "NVIDIA_API_KEY not set" }, 500);
   }
 
-  const apiKey = keys[Math.floor(Math.random() * keys.length)];
-
-  /* ---------------- D1 缓存 ---------------- */
+  /* D1 缓存 */
   const hash = await sha256(text);
-
   const cached = await env.DB.prepare(
-    `SELECT result FROM analysis_cache WHERE text_hash = ?`
+    "SELECT result FROM analysis_cache WHERE text_hash = ?"
   )
     .bind(hash)
     .first<{ result: string }>();
@@ -66,60 +49,53 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     });
   }
 
-  /* ---------------- 多模型降级 ---------------- */
-  let lastError: unknown;
+  /* AI */
+  try {
+    const result = await callNvidia(text, apiKey);
 
-  for (const model of MODELS) {
-    try {
-      const result = await callModel(model, text, apiKey);
-      await saveCache(env.DB, hash, text, result, model);
-      return json({
-        ...result,
-        meta: { model, cached: false },
-      });
-    } catch (err) {
-      lastError = err;
-    }
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO analysis_cache VALUES (?, ?, ?, ?, ?, ?)"
+    )
+      .bind(null, hash, text, JSON.stringify(result), "qwen2.5", Date.now())
+      .run();
+
+    return json({ ...result, meta: { model: "qwen2.5", cached: false } });
+  } catch (err: any) {
+    return json({ error: err.message }, 500);
   }
-
-  return json(
-    { error: (lastError as Error)?.message || "All models failed" },
-    500
-  );
 };
 
-/* ================== AI 调用 ================== */
+/* ================= AI ================= */
 
-async function callModel(
-  model: string,
-  text: string,
-  apiKey: string
-) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+async function callNvidia(text: string, apiKey: string) {
+  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "qwen2.5-72b-instruct",
+      messages: [
+        {
+          role: "system",
+          content: `
+你是一位文言文专家。
+请对以下文言文进行深度解析，并以严格 JSON 格式返回，不要包含任何解释性文字。
 
-  const res = await fetch(
-    "https://integrate.api.nvidia.com/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: text },
-        ],
-        temperature: 0.2,
-        max_tokens: 2048,
-      }),
-      signal: controller.signal,
-    }
-  );
-
-  clearTimeout(timeout);
+字段要求：
+- translation: 现代汉语翻译
+- syntax: [{ point, explanation }]
+- keyWords: [{ word, meaning, usage }]
+- culturalContext: 文化背景说明
+`,
+        },
+        { role: "user", content: text },
+      ],
+      temperature: 0.2,
+      max_tokens: 2048,
+    }),
+  });
 
   if (!res.ok) {
     const err = await res.text();
@@ -131,25 +107,18 @@ async function callModel(
   return safeParseJSON(raw);
 }
 
-/* ---------- JSON 容错 ---------- */
+/* ================= 工具 ================= */
+
 function safeParseJSON(raw: string): any {
   let cleaned = raw.trim().replace(/^```json|^```|```$/g, "");
-
   try {
     return ensureFields(JSON.parse(cleaned));
   } catch {}
-
-  const match = cleaned.match(/{[\s\S]*}/);
-  if (match) {
-    try {
-      return ensureFields(JSON.parse(match[0]));
-    } catch {}
-  }
-
+  const m = cleaned.match(/{[\s\S]*}/);
+  if (m) return ensureFields(JSON.parse(m[0]));
   throw new Error("AI returned invalid JSON");
 }
 
-/* ---------- 字段兜底 ---------- */
 function ensureFields(obj: any) {
   return {
     translation: obj.translation ?? "",
@@ -159,35 +128,11 @@ function ensureFields(obj: any) {
   };
 }
 
-/* ---------- D1 缓存 ---------- */
-async function saveCache(
-  db: D1Database,
-  hash: string,
-  text: string,
-  result: any,
-  model: string
-) {
-  await db.prepare(
-    `INSERT OR IGNORE INTO analysis_cache
-     (text_hash, text, result, model, created_at)
-     VALUES (?, ?, ?, ?, ?)`
-  )
-    .bind(hash, text, JSON.stringify(result), model, Date.now())
-    .run();
-}
-
-/* ---------- SHA-256 ---------- */
 async function sha256(str: string) {
-  const buf = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(str)
-  );
-  return [...new Uint8Array(buf)]
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-/* ---------- JSON 响应 ---------- */
 function json(data: any, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
