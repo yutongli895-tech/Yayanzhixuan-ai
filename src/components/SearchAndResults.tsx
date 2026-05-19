@@ -3,7 +3,7 @@ import { Search, Loader2, Sparkles, MessageSquare, ArrowRightLeft, Image as Imag
 import { motion, AnimatePresence } from 'motion/react';
 import { DictionaryEntry, AIAnalysisResult, ComparisonResult, DailyWord } from '../types';
 import { StrokeOrder } from './StrokeOrder';
-import { submitFeedback } from '../services/geminiService';
+import { submitFeedback } from '../services/nvidiaService';
 
 export const SearchBar: React.FC<{
   value: string;
