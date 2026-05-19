@@ -1,5 +1,9 @@
 // services/nvidiaService.ts
-import type { AnalysisResult } from '../types';
+import type {
+  AnalysisResult,
+  ComparisonResult,
+  DailyWord,
+} from '../types';
 
 const MODELS = [
   'qwen2.5-72b-instruct',
@@ -17,6 +21,8 @@ const SYSTEM_PROMPT = `
 - culturalContext: 文化背景说明
 `;
 
+/* ================= AI 解析类（多模型降级） ================= */
+
 export class NvidiaService {
   private apiKey: string;
 
@@ -32,7 +38,6 @@ export class NvidiaService {
         return await this.callModel(model, text);
       } catch (err) {
         lastError = err as Error;
-        console.warn(`模型 ${model} 失败，尝试下一个:`, err);
       }
     }
 
@@ -92,20 +97,44 @@ export class NvidiaService {
   }
 }
 
-/*
- * ✅ 专门给 SearchAndResults.tsx 用的函数
- * （CF Pages / Vite 需要“命名导出”）
- */
+/* ================= 前端统一函数导出 ================= */
+
+export async function analyzeClassicalChinese(
+  text: string
+): Promise<AnalysisResult> {
+  const res = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) throw new Error('解析失败');
+  return res.json();
+}
+
+export async function compareWords(
+  words: string[]
+): Promise<ComparisonResult> {
+  const res = await fetch('/api/compare', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ words }),
+  });
+  if (!res.ok) throw new Error('对比失败');
+  return res.json();
+}
+
+export async function getDailyWord(): Promise<DailyWord> {
+  const res = await fetch('/api/daily');
+  if (!res.ok) throw new Error('获取每日一词失败');
+  return res.json();
+}
+
 export async function submitFeedback(word: string, feedback: string) {
   const res = await fetch('/api/feedback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ word, feedback }),
   });
-
-  if (!res.ok) {
-    throw new Error('反馈提交失败');
-  }
-
+  if (!res.ok) throw new Error('反馈提交失败');
   return res.json();
 }
