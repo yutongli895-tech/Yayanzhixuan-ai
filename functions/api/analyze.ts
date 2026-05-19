@@ -60,7 +60,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     .first<{ result: string }>();
 
   if (cached) {
-    return json(JSON.parse(cached.result));
+    return json({
+      ...JSON.parse(cached.result),
+      meta: { model: "cache", cached: true },
+    });
   }
 
   /* ---------------- 多模型降级 ---------------- */
@@ -70,7 +73,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     try {
       const result = await callModel(model, text, apiKey);
       await saveCache(env.DB, hash, text, result, model);
-      return json(result);
+      return json({
+        ...result,
+        meta: { model, cached: false },
+      });
     } catch (err) {
       lastError = err;
     }
@@ -82,29 +88,43 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   );
 };
 
-/* ================== 工具函数 ================== */
+/* ================== AI 调用 ================== */
 
 async function callModel(
   model: string,
   text: string,
   apiKey: string
 ) {
-  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: text },
-      ],
-      temperature: 0.2,
-      max_tokens: 2048,
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+
+  const res = await fetch(
+    "https://integrate.api.nvidia.com/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: text },
+        ],
+        temperature: 0.2,
+        max_tokens: 2048,
+      }),
+      signal: controller.signal,
+    }
+  );
+
+  clearTimeout(timeout);
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`NVIDIA ${res.status}: ${err}`);
+  }
 
   const data = await res.json();
   const raw = data?.choices?.[0]?.message?.content || "";
